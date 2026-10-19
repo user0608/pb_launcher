@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Commands
-- Go toolchain is pinned by `go.mod` to Go `1.24.5` (`go 1.24.0`).
+- Go toolchain is pinned by `go.mod` to Go `1.24.13` (`go 1.24.0`).
 - Run the app with `make run`; it executes `env TZ=UTC go run *.go -c config.yml`.
 - Generate a local config with `make gen-config > config.yml`; `config.yml` is ignored and may contain secrets.
 - Build embedded UI before any root Go build/test from a clean tree: `cd ui && npm run build` or `make build-ui`. The `ui` package uses `//go:embed all:dist`, so `go test ./...` fails if `ui/dist` is missing.

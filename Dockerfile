@@ -6,7 +6,7 @@ RUN npm ci
 COPY ui/ ./
 RUN npm run build-embed
 
-FROM golang:1.24.5-bookworm AS go-builder
+FROM golang:1.24.13-bookworm AS go-builder
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download

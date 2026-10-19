@@ -28,7 +28,7 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.4",
     "react-hot-toast": "^2.5.2",
-    "react-router-dom": "^7.6.1",
+    "react-router-dom": "^7.18.4",
     "tailwindcss": "^4.1.8",
     "yup": "^1.6.1"
   },
@@ -47,7 +47,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.30.1",
-    "vite": "^6.3.5"
+    "typescript-eslint": "^8.72.0",
+    "vite": "^6.4.4"
   }
 }
