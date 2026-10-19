@@ -40,3 +40,17 @@ export const extractParts = (url: URL) => {
   const portPart = port && !isDefaultPort ? `:${port}` : "";
   return { protocol, hostname, portPart };
 };
+
+// Keep the target hostname while advertising the configured external scheme/port.
+export const formatProxyUrl = (
+  protocol: string,
+  hostname: string,
+  port?: string,
+  publicUrl?: string,
+): string => {
+  if (publicUrl) {
+    const origin = new URL(publicUrl);
+    return formatUrl(origin.protocol, hostname, origin.port);
+  }
+  return formatUrl(protocol, hostname, port);
+};

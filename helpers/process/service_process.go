@@ -66,6 +66,18 @@ func New(ID string, command string, args []string, options ...ProcessOption) *Pr
 func (p *Process) Status() ProcessState { return p.h.currentState() }
 func (p *Process) IsRunning() bool      { return p.Status() == Running }
 
+// PID returns zero when there is no running child process.
+func (p *Process) PID() int {
+	if !p.IsRunning() {
+		return 0
+	}
+	cmd := p.h.currentCommand()
+	if cmd == nil || cmd.Process == nil {
+		return 0
+	}
+	return cmd.Process.Pid
+}
+
 func (p *Process) Start() error {
 	currentState := p.Status()
 	if currentState != Stopped {

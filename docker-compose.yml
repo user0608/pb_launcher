@@ -1,0 +1,31 @@
+services:
+  pblauncher:
+    build:
+      context: .
+      args:
+        COMMIT: ${COMMIT:-none}
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - "${HTTP_BIND_ADDRESS:-127.0.0.1}:7080:7080"
+      - "${HTTP_BIND_ADDRESS:-127.0.0.1}:8443:8443"
+    volumes:
+      - type: bind
+        source: ./config.yml
+        target: /app/config.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - pblauncher_pb_data:/app/pb_data
+      - pblauncher_data:/app/data
+      - pblauncher_downloads:/app/downloads
+      - pblauncher_certificates:/app/.certificates
+      - pblauncher_accounts:/app/.accounts
+
+volumes:
+  pblauncher_pb_data:
+  pblauncher_data:
+  pblauncher_downloads:
+  pblauncher_certificates:
+  pblauncher_accounts:

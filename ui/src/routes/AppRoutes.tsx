@@ -14,6 +14,7 @@ import { ProxyPage } from "../pages/internal/ProxyPage";
 import { ProxyDetailsPage } from "../pages/internal/ProxyDetailsPage";
 import { SettingsPage } from "../pages/internal/SettingsPage";
 import { OperationsPage } from "../pages/internal/OperationsPage";
+import { StatusPage } from "../pages/internal/StatusPage";
 
 const PrivateRoute = ({
   children,
@@ -96,6 +97,7 @@ export const AppRoutes = () => {
           <Route index element={<ServicesPage />} />
           <Route path="/proxy" element={<ProxyPage />} />
           <Route path="/operations" element={<OperationsPage />} />
+          <Route path="/status" element={<StatusPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/services/:service_id" element={<ServiceDetailPage />} />
           <Route path="/proxy/:proxy_id" element={<ProxyDetailsPage />} />

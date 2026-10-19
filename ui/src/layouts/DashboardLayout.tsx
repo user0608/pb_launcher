@@ -1,6 +1,14 @@
 import { useMemo, type PropsWithChildren } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { History, Server, Waypoints, User, LogOut, Settings } from "lucide-react";
+import {
+  Activity,
+  History,
+  Server,
+  Waypoints,
+  User,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { useConfirmModal } from "../hooks/useConfirmModal";
 import { authService } from "../services/auth";
 import { useViewportHeight } from "../hooks/useViewportHeight";
@@ -17,6 +25,7 @@ export const DashboardLayout = ({ children }: PropsWithChildren) => {
     if (pathname === "/" || pathname.startsWith("/services/")) return "service";
     if (pathname === "/proxy" || pathname.startsWith("/proxy/")) return "proxy";
     if (pathname === "/operations") return "operations";
+    if (pathname === "/status") return "status";
     if (pathname === "/settings") return "settings";
     return "<none>";
   }, [pathname]);
@@ -93,9 +102,25 @@ export const DashboardLayout = ({ children }: PropsWithChildren) => {
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">Operations</span>
             </NavLink>
+            <NavLink
+              to="/status"
+              aria-label="System Resources"
+              className={classNames(
+                "btn btn-sm btn-ghost shrink-0 gap-2 text-base-content transition-colors",
+                {
+                  "bg-base-200 text-primary": selected === "status",
+                },
+              )}
+            >
+              <Activity className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Resources</span>
+            </NavLink>
           </nav>
           <div className="dropdown dropdown-end shrink-0">
-            <label tabIndex={0} className="btn btn-sm btn-ghost gap-2 px-2 sm:px-3">
+            <label
+              tabIndex={0}
+              className="btn btn-sm btn-ghost gap-2 px-2 sm:px-3"
+            >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Account</span>
             </label>

@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build-embed": "tsc -b && vite build --mode embed",
     "lint": "eslint src/",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "fmt": "prettier --write src/",
     "preview": "vite preview"
   },

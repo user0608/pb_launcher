@@ -14,7 +14,7 @@ import classNames from "classnames";
 import { useModal } from "../../../components/modal/hook";
 import { DefaultCredentialsCard } from "./DefaultCredentialsCard";
 import type { ProxyConfigsResponse } from "../../../services/config";
-import { formatUrl } from "../../../utils/url";
+import { formatProxyUrl } from "../../../utils/url";
 import { CopyableField } from "./CopyableField";
 
 type Props = {
@@ -55,10 +55,11 @@ export const ServiceCard: FC<Props> = ({
     }
     domains.push(...(service.domains ?? []).map(d => d.domain));
     return domains.map(domain => {
-      const urlStr = formatUrl(
+      const urlStr = formatProxyUrl(
         proxyInfo.use_https ? "https" : "http",
         domain,
         proxyInfo.use_https ? proxyInfo.https_port : proxyInfo.http_port,
+        proxyInfo.public_url,
       );
       if (service._pb_install)
         return `${urlStr}/_/#/pbinstal/${service._pb_install}`;

@@ -20,6 +20,7 @@ func RegisterAdminExistsRoute(app *pocketbase.PocketBase, c configs.Config) {
 				"http_port":   c.GetHttpPort(),
 				"https_port":  c.GetHttpsPort(),
 				"base_domain": c.GetDomain(),
+				"public_url":  c.GetPublicURL(),
 			}
 			return e.JSON(http.StatusOK, response)
 		})

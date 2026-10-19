@@ -1,6 +1,10 @@
 # Network settings
 domain: pb.labenv.test
 
+# Optional public origin for UI links behind a TLS-terminating proxy.
+# Must match domain. Does NOT enable internal TLS or manage external certificates.
+# public_url: https://pb.labenv.test
+
 # network address where PocketBase instances listen  
 # for internal use only behind the proxy  
 bind_address: 127.0.0.1

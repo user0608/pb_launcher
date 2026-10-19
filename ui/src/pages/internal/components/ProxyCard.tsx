@@ -3,7 +3,7 @@ import { type FC, useMemo, useRef } from "react";
 import classNames from "classnames";
 
 import type { ProxyConfigsResponse } from "../../../services/config";
-import { formatUrl } from "../../../utils/url";
+import { formatProxyUrl } from "../../../utils/url";
 import { CopyableField } from "./CopyableField";
 import type { ProxyEntryDto } from "../../../services/proxy";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
@@ -34,10 +34,11 @@ export const ProxyCard: FC<Props> = ({
     }
 
     return domains.map(domain =>
-      formatUrl(
+      formatProxyUrl(
         proxyInfo.use_https ? "https" : "http",
         domain,
         proxyInfo.use_https ? proxyInfo.https_port : proxyInfo.http_port,
+        proxyInfo.public_url,
       ),
     );
   }, [proxyInfo, entry]);

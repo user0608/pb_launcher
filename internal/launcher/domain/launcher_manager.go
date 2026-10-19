@@ -37,6 +37,7 @@ type LauncherManager struct {
 	lstore              *logstore.ServiceLogDB
 	operationLogger     *operationlog.Logger
 	//
+	processMtx  sync.RWMutex
 	processList map[string]*process.Process
 	errChan     chan process.ProcessErrorMessage
 }
@@ -201,7 +202,10 @@ func (lm *LauncherManager) buildStdoutHandler(serviceID string) iouitls.WriterIn
 }
 
 func (lm *LauncherManager) startService(ctx context.Context, service models.Service) error {
-	if existingProcess, exists := lm.processList[service.ID]; exists {
+	lm.processMtx.RLock()
+	existingProcess, exists := lm.processList[service.ID]
+	lm.processMtx.RUnlock()
+	if exists {
 		if existingProcess.IsRunning() {
 			return fmt.Errorf("service %s is already running", service.ID)
 		}
@@ -251,7 +255,9 @@ func (lm *LauncherManager) startService(ctx context.Context, service models.Serv
 		return err
 	}
 
+	lm.processMtx.Lock()
 	lm.processList[service.ID] = newProcess
+	lm.processMtx.Unlock()
 
 	if err := lm.repository.MarkServiceRunning(ctx, service.ID, ip, fmt.Sprint(port)); err != nil {
 		slog.Error("failed to update service status to running",
@@ -266,7 +272,9 @@ func (lm *LauncherManager) startService(ctx context.Context, service models.Serv
 }
 
 func (lm *LauncherManager) stopService(ctx context.Context, serviceID string) error {
+	lm.processMtx.RLock()
 	existingProcess, exists := lm.processList[serviceID]
+	lm.processMtx.RUnlock()
 	if !exists {
 		return fmt.Errorf("no running process found for service %s", serviceID)
 	}
@@ -279,7 +287,9 @@ func (lm *LauncherManager) stopService(ctx context.Context, serviceID string) er
 		return err
 	}
 
+	lm.processMtx.Lock()
 	delete(lm.processList, serviceID)
+	lm.processMtx.Unlock()
 
 	if err := lm.repository.MarkServiceStoped(ctx, serviceID); err != nil {
 		slog.Error("failed to mark service as stopped", "serviceID", serviceID, "error", err)
@@ -290,7 +300,10 @@ func (lm *LauncherManager) stopService(ctx context.Context, serviceID string) er
 func (lm *LauncherManager) restartService(ctx context.Context, service models.Service) error {
 	lm.lstore.InsertLog(service.ID, logstore.StreamStdout, "Restarting service...")
 
-	if p, ok := lm.processList[service.ID]; ok && p.IsRunning() {
+	lm.processMtx.RLock()
+	p, ok := lm.processList[service.ID]
+	lm.processMtx.RUnlock()
+	if ok && p.IsRunning() {
 		if err := lm.stopService(ctx, service.ID); err != nil {
 			slog.Error("restart failed: unable to stop service", "serviceID", service.ID, "error", err)
 			return err
@@ -425,6 +438,20 @@ func (lm *LauncherManager) Run(ctx context.Context) error {
 	return nil
 }
 
+// RunningProcessIDs returns a detached snapshot; callers never access the map
+// owned by the launcher or hold its lock while collecting OS metrics.
+func (lm *LauncherManager) RunningProcessIDs() map[string]int {
+	lm.processMtx.RLock()
+	defer lm.processMtx.RUnlock()
+	pids := make(map[string]int)
+	for id, proc := range lm.processList {
+		if pid := proc.PID(); pid > 0 {
+			pids[id] = pid
+		}
+	}
+	return pids
+}
+
 func (lm *LauncherManager) Dispose() error {
 	lm.rwMtx.Lock()
 	defer lm.rwMtx.Unlock()
@@ -439,7 +466,13 @@ func (lm *LauncherManager) Dispose() error {
 		combinedErr = errors.Join(combinedErr, err)
 	}
 
+	lm.processMtx.RLock()
+	processes := make([]*process.Process, 0, len(lm.processList))
 	for _, proc := range lm.processList {
+		processes = append(processes, proc)
+	}
+	lm.processMtx.RUnlock()
+	for _, proc := range processes {
 		wg.Add(1)
 		go func(p *process.Process) {
 			defer wg.Done()

@@ -1,7 +1,7 @@
 import { useMemo, type FC } from "react";
 import { DomainCard } from "../components/DomainCard";
 import { useProxyConfigs } from "../../../hooks/useProxyConfigs";
-import { formatUrl } from "../../../utils/url";
+import { formatProxyUrl } from "../../../utils/url";
 import { Plus } from "lucide-react";
 import { useModal } from "../../../components/modal/hook";
 import { DomainForm } from "../forms/DomainForm";
@@ -141,10 +141,11 @@ export const DomainsSection: FC<Props> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         <DomainCard
           readonly
-          url={formatUrl(
+          url={formatProxyUrl(
             proxyDomain.use_https === "yes" ? "https" : "http",
             proxyDomain.domain,
             proxy.use_https ? proxy.https_port : proxy.http_port,
+            proxy.public_url,
           )}
           port={proxy.use_https ? proxy.https_port : proxy.http_port}
           domain={proxyDomain}
@@ -154,6 +155,12 @@ export const DomainsSection: FC<Props> = ({
           <DomainCard
             key={domain.id}
             domain={domain}
+            url={formatProxyUrl(
+              domain.use_https === "yes" ? "https" : "http",
+              domain.domain,
+              domain.use_https === "yes" ? proxy.https_port : proxy.http_port,
+              proxy.public_url,
+            )}
             port={proxy.use_https ? proxy.https_port : proxy.http_port}
             onEdit={() => openEditModal(domain)}
             onDelete={() => handleDelete(domain.id)}

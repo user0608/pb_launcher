@@ -19,9 +19,6 @@ func RunHTTPSProxy(
 	certStore tlscommon.Store,
 	cfg configs.Config,
 ) {
-	mux := http.NewServeMux()
-	mux.Handle("/", proxyHandler)
-
 	wildcardDomain := domainutil.ToWildcardDomain(cfg.GetDomain())
 
 	addr := fmt.Sprintf("%s:%s", cfg.GetListenIPAddress(), cfg.GetHttpsPort())
@@ -47,7 +44,7 @@ func RunHTTPSProxy(
 				return &tlsCert, err
 			},
 		},
-		Handler: mux,
+		Handler: newProxyHandler(proxyHandler, cfg.GetDomain()),
 	}
 
 	lc.Append(fx.Hook{

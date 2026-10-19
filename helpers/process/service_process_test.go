@@ -10,6 +10,9 @@ import (
 func TestProcess_StartAndStop(t *testing.T) {
 	errChan := make(chan process.ProcessErrorMessage, 1)
 	service := process.New("test-service", "sleep", []string{"2"}, process.WithErrorChan(errChan))
+	if service.PID() != 0 {
+		t.Fatal("stopped process has a PID")
+	}
 
 	if err := service.Start(); err != nil {
 		t.Fatalf("failed to start service: %v", err)
@@ -18,6 +21,9 @@ func TestProcess_StartAndStop(t *testing.T) {
 	if !service.IsRunning() {
 		t.Fatalf("service should be running")
 	}
+	if service.PID() <= 0 {
+		t.Fatal("running process has no PID")
+	}
 
 	if err := service.Stop(); err != nil {
 		t.Fatalf("failed to stop service: %v", err)
@@ -25,6 +31,9 @@ func TestProcess_StartAndStop(t *testing.T) {
 
 	if service.IsRunning() {
 		t.Fatalf("service should not be running")
+	}
+	if service.PID() != 0 {
+		t.Fatal("stopped process still has a PID")
 	}
 }
 
@@ -159,7 +168,15 @@ func TestProcess_StdoutAndStderr(t *testing.T) {
 		t.Fatalf("failed to start service: %v", err)
 	}
 
-	time.Sleep(1 * time.Second)
+	// Waiting for Stopped synchronizes with cmd.Wait and its output writers;
+	// sleeping alone does not make bytes.Buffer safe for concurrent reads.
+	deadline := time.Now().Add(5 * time.Second)
+	for service.IsRunning() && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if service.IsRunning() {
+		t.Fatal("echo did not finish")
+	}
 
 	if got := stdout.String(); got != "hello world\n" {
 		t.Fatalf("unexpected stdout, got: %q", got)

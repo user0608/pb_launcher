@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -37,6 +38,7 @@ type Config interface {
 	GetCertRequestExecutorInterval() time.Duration
 
 	GetDomain() string
+	GetPublicURL() string
 
 	GetListenIPAddress() string
 	GetHttpPort() string
@@ -85,8 +87,9 @@ type configs struct {
 	CertificatesDir string `mapstructure:"certificates_dir" yaml:"certificates_dir"` // default: ./.certificates
 	AccountsDir     string `mapstructure:"accounts_dir" yaml:"accounts_dir"`         // default: ./.accounts
 
-	DataDir string `mapstructure:"data_dir" yaml:"data_dir"` // default: ./data
-	Domain  string `mapstructure:"domain" yaml:"domain"`
+	DataDir   string `mapstructure:"data_dir" yaml:"data_dir"` // default: ./data
+	Domain    string `mapstructure:"domain" yaml:"domain"`
+	PublicURL string `mapstructure:"public_url" yaml:"public_url"`
 
 	ListenAddress               string `mapstructure:"listen_address" yaml:"listen_address"` // default: 0.0.0.0
 	HttpPort                    string `mapstructure:"http_port" yaml:"http_port"`           // default: 8072
@@ -177,6 +180,10 @@ func (c *configs) GetDomain() string {
 	}
 	return strings.Split(c.Domain, ":")[0]
 }
+
+// GetPublicURL only advertises links; it never enables internal TLS or trusts
+// client-supplied forwarding headers.
+func (c *configs) GetPublicURL() string { return c.PublicURL }
 
 func (c *configs) GetListenIPAddress() string {
 	if c.ListenAddress == "" {
@@ -303,6 +310,12 @@ func LoadConfigs(configPath string) (Config, error) {
 		return nil, fmt.Errorf("invalid listen_address: %w", err)
 	}
 
+	c.PublicURL = strings.TrimRight(strings.TrimSpace(c.PublicURL), "/")
+	if c.PublicURL != "" {
+		if err := validatePublicURL(c.PublicURL, c.GetDomain()); err != nil {
+			return nil, err
+		}
+	}
 	portNum, err := strconv.Atoi(c.GetHttpPort())
 	if err != nil || portNum < 1 || portNum > 65535 {
 		return nil, errors.New("invalid http_port: must be an integer between 1 and 65535")
@@ -340,4 +353,20 @@ func parseDurationWithMin(raw string, min time.Duration, name string) time.Durat
 		return min
 	}
 	return duration
+}
+
+func validatePublicURL(raw, domain string) error {
+	u, err := url.Parse(raw)
+	if err != nil || u == nil || (u.Scheme != "http" && u.Scheme != "https") ||
+		!strings.EqualFold(u.Hostname(), domain) || u.User != nil || u.Path != "" ||
+		u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.Opaque != "" {
+		return errors.New("public_url must be an http(s) origin matching domain, without credentials, path, query or fragment")
+	}
+	if u.Port() != "" {
+		port, err := strconv.Atoi(u.Port())
+		if err != nil || port < 1 || port > 65535 {
+			return errors.New("invalid public_url port")
+		}
+	}
+	return nil
 }

@@ -11,14 +11,11 @@ import (
 )
 
 func RunHttpProxy(lc fx.Lifecycle, handler *DynamicReverseProxy, cfg configs.Config) {
-	mux := http.NewServeMux()
-	mux.Handle("/", handler)
-
 	addr := fmt.Sprintf("%s:%s", cfg.GetListenIPAddress(), cfg.GetHttpPort())
 	fmt.Println("http:addr:", addr)
 	server := &http.Server{
 		Addr:    addr,
-		Handler: mux,
+		Handler: newProxyHandler(handler, cfg.GetDomain()),
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

@@ -6,6 +6,7 @@ export interface ProxyConfigsResponse {
   http_port?: string;
   https_port?: string;
   base_domain?: string;
+  public_url?: string;
 }
 
 export const configService = {

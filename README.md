@@ -125,6 +125,16 @@ command_check_interval: 10s
 To run the project, you can use `make run` or `go run *.go -c config.yml`.
 For the UI, navigate to the `ui` directory and run `npm run dev`.
 
+## Docker and resource monitoring
+
+Use the included `Dockerfile` and `docker-compose.yml` for a non-root deployment
+with persistent volumes and an HTTP health check. See [Docker deployment](docs/DOCKER.md)
+for setup, migrations, updates, and external reverse proxy configuration.
+
+The authenticated **Resources** page (`/status`) displays system and per-instance
+CPU/memory usage, disk space, and active instances. Detailed measurements are
+currently supported on Linux; unavailable measurements are shown explicitly.
+
 # Domain and SSL Certificates
 
 For custom domains, certificates are issued using **Let's Encrypt**.
