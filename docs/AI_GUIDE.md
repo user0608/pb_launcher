@@ -52,6 +52,7 @@ Major modules:
 - `internal/operationlog`: operation history logger.
 - `internal/proxy`: reverse proxy and domain routing.
 - `internal/certmanager`: certificate planning/execution.
+- `internal/dnscheck`: authenticated, bounded, read-only DNS diagnostics; no HTTP/TLS probes or certificate changes.
 
 ## Frontend Architecture
 

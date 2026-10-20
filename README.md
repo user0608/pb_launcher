@@ -137,6 +137,10 @@ currently supported on Linux; unavailable measurements are shown explicitly.
 
 # Domain and SSL Certificates
 
+The **DNS setup** assistant in each service/proxy domain card explains A, AAAA
+and CNAME records and checks resolution against optional expected IP addresses.
+It does not request certificates or change records. See [DNS setup guide](docs/DNS_SETUP.md).
+
 For custom domains, certificates are issued using **Let's Encrypt**.
 
 ### DNS Challenge Provider Support

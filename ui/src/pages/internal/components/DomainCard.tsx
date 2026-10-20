@@ -1,5 +1,12 @@
 import classNames from "classnames";
-import { ExternalLink, Info, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  ExternalLink,
+  Globe,
+  Info,
+  Pencil,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useMemo, type FC } from "react";
 import type { DomainDto } from "../../../services/services_domain";
 import { joinUrls } from "../../../utils/url";
@@ -14,6 +21,7 @@ type Props = {
   onEdit?: () => void;
   onDelete?: () => void;
   onValidate?: () => void;
+  onDnsSetup?: () => void;
 };
 
 export const DomainCard: FC<Props> = ({
@@ -25,6 +33,7 @@ export const DomainCard: FC<Props> = ({
   onEdit,
   onDelete,
   onValidate,
+  onDnsSetup,
 }) => {
   const { openModal } = useModal();
   const fmtdomain = useMemo(() => {
@@ -128,7 +137,7 @@ export const DomainCard: FC<Props> = ({
                 )}
               >
                 <ShieldCheck className="w-3 h-3 text-inherit" />
-                Validate DNS
+                Retry certificate
               </button>
             )}
         </div>
@@ -155,6 +164,18 @@ export const DomainCard: FC<Props> = ({
           </div>
         )}
       </div>
+      {onDnsSetup && (
+        <div className="mt-2">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline gap-2"
+            onClick={onDnsSetup}
+          >
+            <Globe className="h-4 w-4" aria-hidden="true" />
+            DNS setup
+          </button>
+        </div>
+      )}
     </div>
   );
 };

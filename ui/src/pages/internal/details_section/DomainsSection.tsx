@@ -14,6 +14,7 @@ import { ErrorFallback } from "../../../components/helpers/ErrorFallback";
 import { getErrorMessage } from "../../../utils/errors";
 import toast from "react-hot-toast";
 import { useConfirmModal } from "../../../hooks/useConfirmModal";
+import { DnsSetupGuide } from "../components/DnsSetupGuide";
 
 type Props = {
   service_id: string;
@@ -68,6 +69,16 @@ export const DomainsSection: FC<Props> = ({
       />,
       {
         title: "Create Domain",
+      },
+    );
+  };
+
+  const openDnsSetup = (domain: string) => {
+    openModal(
+      <DnsSetupGuide domain={domain} baseDomain={proxy.base_domain} />,
+      {
+        title: "DNS Setup Guide",
+        width: "min(720px, calc(100vw - 1rem))",
       },
     );
   };
@@ -134,7 +145,7 @@ export const DomainsSection: FC<Props> = ({
             onClick={openCreateModal}
           >
             <Plus className="w-4 h-4" />
-            New instance
+            New domain
           </button>
         </div>
       </div>
@@ -150,6 +161,11 @@ export const DomainsSection: FC<Props> = ({
           port={proxy.use_https ? proxy.https_port : proxy.http_port}
           domain={proxyDomain}
           suffix={url_route_suffix}
+          onDnsSetup={
+            proxy.base_domain
+              ? () => openDnsSetup(proxyDomain.domain)
+              : undefined
+          }
         />
         {(domainsQuery.data ?? []).map(domain => (
           <DomainCard
@@ -166,6 +182,7 @@ export const DomainsSection: FC<Props> = ({
             onDelete={() => handleDelete(domain.id)}
             onValidate={() => handleCreateSSLRequest(domain.domain)}
             suffix={url_route_suffix}
+            onDnsSetup={() => openDnsSetup(domain.domain)}
           />
         ))}
       </div>
