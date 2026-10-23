@@ -135,6 +135,14 @@ The authenticated **Resources** page (`/status`) displays system and per-instanc
 CPU/memory usage, disk space, and active instances. Detailed measurements are
 currently supported on Linux; unavailable measurements are shown explicitly.
 
+### Finding instances
+
+The instance list supports case-insensitive name/ID search and combined status,
+repository, and version filters, with a result count and **Clear filters** action.
+Version choices come from instances in the selected repository; changing the
+repository resets the version selection. The existing saved status preference
+is preserved. Filtering does not modify instances or send lifecycle commands.
+
 # Domain and SSL Certificates
 
 The **DNS setup** assistant in each service/proxy domain card explains A, AAAA

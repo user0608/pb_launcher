@@ -16,9 +16,16 @@ import classNames from "classnames";
 import { useNavigate } from "react-router-dom";
 import { useProxyConfigs } from "../../hooks/useProxyConfigs";
 import { backupService } from "../../services/backup";
+import { ErrorFallback } from "../../components/helpers/ErrorFallback";
+import {
+  filterServices,
+  getServiceFilterOptions,
+  readStoredStatusFilter,
+  serviceStatusOptions,
+  type ServiceStatusFilter,
+} from "../../utils/serviceFilters";
 
 const STATUS_FILTER_KEY = "pb-dashboard-status-filter";
-type TStatus = "all" | "running" | "stopped";
 export const ServicesPage = () => {
   const navigate = useNavigate();
   const { openModal } = useModal();
@@ -32,29 +39,36 @@ export const ServicesPage = () => {
   });
 
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useLocalStorage<{ value: TStatus }>(
+  const [storedStatus, setStoredStatus] = useLocalStorage<unknown>(
     STATUS_FILTER_KEY,
     { value: "all" },
   );
 
-  const filtered = useMemo(() => {
-    return (servicesQuery.data ?? [])
-      .filter(
-        s =>
-          String(s.id).includes(query.toLowerCase()) ||
-          s.name.toLowerCase().includes(query.toLowerCase()),
-      )
-      .filter(s => {
-        switch (statusFilter.value) {
-          case "all":
-            return true;
-          case "running":
-            return s.status === "running";
-          case "stopped":
-            return s.status === "stopped";
-        }
-      });
-  }, [servicesQuery.data, query, statusFilter]);
+  const status = readStoredStatusFilter(storedStatus);
+  const [repositoryID, setRepositoryID] = useState("");
+  const [version, setVersion] = useState("");
+  const options = useMemo(
+    () => getServiceFilterOptions(servicesQuery.data ?? [], repositoryID),
+    [servicesQuery.data, repositoryID],
+  );
+  const filtered = useMemo(
+    () =>
+      filterServices(servicesQuery.data ?? [], {
+        query,
+        status,
+        repositoryID,
+        version,
+      }),
+    [servicesQuery.data, query, status, repositoryID, version],
+  );
+  const hasFilters =
+    query !== "" || status !== "all" || repositoryID !== "" || version !== "";
+  const clearFilters = () => {
+    setQuery("");
+    setStoredStatus({ value: "all" });
+    setRepositoryID("");
+    setVersion("");
+  };
 
   const deleteMutation = useMutation({
     mutationFn: serviceService.deleteServiceInstance,
@@ -158,38 +172,16 @@ export const ServicesPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex gap-2 w-full sm:max-w-md">
-          <input
-            type="text"
-            placeholder="Search service..."
-            className="input input-sm input-bordered w-full"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-          <button
-            onClick={() => servicesQuery.refetch()}
-            className="btn btn-sm btn-ghost"
-          >
-            <RefreshCcw
-              className={classNames("w-4 h-4", {
-                "animate-spin": servicesQuery.isFetching,
-              })}
-            />
-          </button>
+        <div>
+          <h2 className="text-xl font-semibold">Instances</h2>
+          {servicesQuery.data && (
+            <p className="text-sm text-base-content/70" role="status">
+              {filtered.length} of {servicesQuery.data.length} instances
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 select-none">
-          <select
-            className="select select-sm select-bordered w-full sm:w-60"
-            value={statusFilter.value}
-            onChange={e =>
-              setStatusFilter({ value: e.target.value as TStatus })
-            }
-          >
-            <option value="all">All</option>
-            <option value="running">Running</option>
-            <option value="stopped">Stopped</option>
-          </select>
           <button
             className="btn btn-sm btn-secondary gap-2 w-full sm:w-auto"
             onClick={openRestoreBackupModal}
@@ -206,6 +198,161 @@ export const ServicesPage = () => {
           </button>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-1">
+          <label
+            htmlFor="instance-search"
+            className="block text-sm font-medium"
+          >
+            Search
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="instance-search"
+              type="search"
+              placeholder="Search by name or ID…"
+              className="input input-sm input-bordered w-full min-w-0"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+            <button
+              type="button"
+              aria-label="Refresh instances"
+              title="Refresh instances"
+              onClick={() => {
+                void servicesQuery.refetch();
+              }}
+              className="btn btn-sm btn-ghost"
+            >
+              <RefreshCcw
+                className={classNames("w-4 h-4", {
+                  "animate-spin": servicesQuery.isFetching,
+                })}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor="instance-status"
+            className="block text-sm font-medium"
+          >
+            Status
+          </label>
+          <select
+            id="instance-status"
+            className="select select-sm select-bordered w-full"
+            value={status}
+            onChange={e =>
+              setStoredStatus({ value: e.target.value as ServiceStatusFilter })
+            }
+          >
+            {serviceStatusOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor="instance-repository"
+            className="block text-sm font-medium"
+          >
+            Repository
+          </label>
+          <select
+            id="instance-repository"
+            className="select select-sm select-bordered w-full"
+            value={repositoryID}
+            onChange={e => {
+              setRepositoryID(e.target.value);
+              setVersion("");
+            }}
+          >
+            <option value="">All repositories</option>
+            {repositoryID &&
+              !options.repositories.some(
+                repository => repository.id === repositoryID,
+              ) && (
+                <option value={repositoryID}>
+                  Selected repository (no current instances)
+                </option>
+              )}
+            {options.repositories.map(repository => (
+              <option key={repository.id} value={repository.id}>
+                {repository.name || "Unnamed repository"}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor="instance-version"
+            className="block text-sm font-medium"
+          >
+            Version
+          </label>
+          <select
+            id="instance-version"
+            className="select select-sm select-bordered w-full"
+            value={version}
+            onChange={e => setVersion(e.target.value)}
+          >
+            <option value="">All versions</option>
+            {version && !options.versions.includes(version) && (
+              <option value={version}>{version} (no current instances)</option>
+            )}
+            {options.versions.map(value => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="btn btn-sm btn-ghost"
+          disabled={!hasFilters}
+          onClick={clearFilters}
+        >
+          Clear filters
+        </button>
+      </div>
+
+      {servicesQuery.isPending && <p role="status">Loading instances...</p>}
+      {servicesQuery.isError && !servicesQuery.data && (
+        <ErrorFallback
+          error={servicesQuery.error}
+          onRetry={() => {
+            void servicesQuery.refetch();
+          }}
+        />
+      )}
+      {servicesQuery.isError && servicesQuery.data && (
+        <p role="alert" className="text-error">
+          Refresh failed. Showing the last successful instance list.
+        </p>
+      )}
+      {servicesQuery.data && servicesQuery.data.length === 0 && (
+        <p>
+          No instances yet. Create an instance or import a backup to get
+          started.
+        </p>
+      )}
+      {servicesQuery.data &&
+        servicesQuery.data.length > 0 &&
+        filtered.length === 0 && (
+          <p>
+            No instances match your filters. Change or clear the filters to see
+            more instances.
+          </p>
+        )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filtered.map(service => (
